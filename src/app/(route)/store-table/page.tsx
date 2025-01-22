@@ -1,9 +1,7 @@
-'use client';
-
 import Header from "@/app/_components/header";
 import Navigation from "@/app/_components/navigation";
 
-const Home = () => {
+const StoreTable = () => {
   return (
     <div>
       <Header/>
@@ -17,5 +15,4 @@ const Home = () => {
     </div>
   )
 }
-
-export default Home
+export default StoreTable;
