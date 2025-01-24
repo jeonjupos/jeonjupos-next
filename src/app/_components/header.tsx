@@ -1,8 +1,10 @@
 'use client'
 
 import {useEffect, useState} from "react";
+import {useRouter} from "next/navigation";
 
 const Header = () => {
+  const router = useRouter();
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
 
@@ -22,10 +24,14 @@ const Header = () => {
 
     return () => clearInterval(interval); // 컴포넌트가 언마운될 때 interval 정리
   }, [])
+
+  const onClickHome = () => {
+    router.push('/store-table');
+  }
   return (
     <div className='flex items-center justify-between h-20 mx-auto bg-main'>
       <div className='ms-2 w-1/6 text-center'>
-        <p className='text-white'>POS</p>
+        <p className='text-white text-4xl' onClick={onClickHome}>POS</p>
       </div>
       <div className='me-2 w-5/6'>
         <div className='flex items-center gap-4'>

@@ -3,8 +3,11 @@ import type { Config } from "tailwindcss";
 const config: {
   content: string[];
   theme: {
-    extend: { backgroundImage: { "gradient-radial": string; "gradient-conic": string }; colors: {} };
-    screens: { tablet: string; laptop: string; desktop: string }
+    extend: {
+      backgroundImage: { "gradient-radial": string; "gradient-conic": string };
+      colors: { main: string; btn_bg_1: string }
+    };
+    screens: { tablet: { max: string }; laptop: { max: string }; desktop: { max: string } }
   };
   plugins: any[]
 } = {
@@ -26,13 +29,13 @@ const config: {
       }
     },
     screens: {
-      'tablet': '640px',
+      'tablet': { max: '640px' },
       // => @media (min-width: 640px) { ... }
 
-      'laptop': '1024px',
+      'laptop': { max: '1024px' },
       // => @media (min-width: 1024px) { ... }
 
-      'desktop': '1280px',
+      'desktop': { max: '1280px' },
       // => @media (min-width: 1280px) { ... }
     },
   },

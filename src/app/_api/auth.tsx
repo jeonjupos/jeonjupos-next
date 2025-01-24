@@ -1,4 +1,4 @@
-import { authInstance} from "@/app/_api/setupAxios";
+import { authInstance } from "@/app/_api/setupAxios";
 
 export const LOGIN_URL = "/manager/login";
 export const postLogin = (payload) => authInstance.post(LOGIN_URL, payload);
