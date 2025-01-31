@@ -17,7 +17,6 @@ const Login = () => {
       localStorage.setItem('accessToken', accessToken);
       router.replace("/store-table");
     } catch (err) {
-      console.log(err);
     }
   }
 

@@ -18,25 +18,22 @@ const StoreTable = () => {
   const fetchStoreTable = async () => {
     try {
       const { data } = await getStoreTable();
-      console.log(data);
       setStoreTableList(data.body.storetableset);
     } catch (err) {
       if (err.response.status === 401) {
         router.replace("/login");
       }
-      console.log(err.response);
     }
   }
 
   const onClickStoreTable = async (e) => {
-    console.log(e);
     router.push(`/order?storetablepkey=${e.storetablepkey}`);
   }
   return (
     <div>
       <Header/>
       <Navigation/>
-      <div className='border-solid border-2 border-slate-400 h-[calc(100vh-10rem)] flex flex-wrap flex-start m-3 rounded-sm'>
+      <div className='border-solid border-2 border-slate-400 h-[calc(100vh-10rem)] flex flex-wrap content-start flex-start m-3 rounded-sm overflow-y-auto'>
         {storeTableList.map((storeTable, idx) => {
           return (
             <div key={idx} className='m-2 w-60 h-48 flex flex-col rounded-sm border-solid border-2 border-slate-400' onClick={() => onClickStoreTable(storeTable)}>
@@ -51,13 +48,13 @@ const StoreTable = () => {
                   </div>
                 </div>
               )}
-              {storeTable.diningyn === 'Y' > 0 && (
+              {storeTable.diningyn === 'Y' && (
                 <div className='h-full'>
-                  <div className='h-1/6 flex justify-between items-center bg-purple-950 rounded-sm'>
+                  <div className='h-2/6 flex justify-between items-center rounded-sm'>
                     <p className='text-4xl font-extrabold ms-2 text-orange-400'>{storeTable.tablenumber}</p>
-                    <p className='me-2 text-white'>{storeTable.regdate}</p>
+                    <p className='me-2 text-black'>{storeTable.regdate}</p>
                   </div>
-                  <div className='h-4/6 overflow-y-auto'>
+                  <div className='h-3/6 overflow-y-auto'>
                     {
                       storeTable.orderlist.map((order, idx) => {
                         return (

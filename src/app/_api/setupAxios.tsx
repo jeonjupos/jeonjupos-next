@@ -19,7 +19,6 @@ authInstance.interceptors.request.use(
   config => {
     // Do something before request is sent
     const accessToken = localStorage.getItem('accessToken');
-    console.log('accessToken : ', accessToken);
     config.headers = {
       ...config.headers,
       Authorization: !accessToken ? `Bearer ` : `Bearer ${accessToken}`,
