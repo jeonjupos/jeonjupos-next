@@ -5,7 +5,7 @@ import Navigation from "@/app/_components/navigation";
 import {useRouter, useSearchParams} from "next/navigation";
 import {useEffect, useState} from "react";
 import {getFoodCategoryList, getFoodList} from "@/app/_api/food";
-import {firstOrder, getOrderFoodList, getOrderInfo, reOrder} from "@/app/_api/order";
+import {firstOrder, getOrderFoodList, getOrderInfo, payment, reOrder} from "@/app/_api/order";
 
 const Order = () => {
   const router = useRouter();
@@ -169,17 +169,24 @@ const Order = () => {
       }
     }
   }
-
+  /**
+   * 기존 메뉴 클릭
+   * @param foodpkey
+   */
   const onClickOrderFood = (foodpkey: number) => {
     setOnClickFoodPkey({ foodpkey: foodpkey, flag: 'ord' });
   }
-
+  /**
+   * 추가 메뉴 클릭
+   * @param foodpkey
+   */
   const onClickNewOrderFood = (foodpkey: number) => {
     setOnClickFoodPkey({ foodpkey: foodpkey, flag: 'new' });
   }
-
+  /**
+   * 수량 증가
+   */
   const raiseOrderCount = () => {
-    console.log('111 : ', onClickFoodPkey);
     if (onClickFoodPkey.flag === 'ord') {
       const findOrderFood = orderFoodList.find((orderFood) => orderFood.foodpkey === onClickFoodPkey.foodpkey);
       if (findOrderFood !== undefined) {
@@ -188,14 +195,15 @@ const Order = () => {
       }
     } else {
       const findOrderFood = newOrderFoodList.find((orderFood) => orderFood.foodpkey === onClickFoodPkey.foodpkey);
-      console.log('22222 : ', findOrderFood)
       if (findOrderFood !== undefined) {
         findOrderFood.ordercount = findOrderFood.ordercount + 1;
         setNewOrderFoodList([...newOrderFoodList]);
       }
     }
   }
-
+  /**
+   * 수량 감소
+   */
   const lowerOrderCount = () => {
     if (onClickFoodPkey.flag === 'ord') {
       const findOrderFood = orderFoodList.find((orderFood) => orderFood.foodpkey === onClickFoodPkey.foodpkey);
@@ -220,7 +228,27 @@ const Order = () => {
    * 결제 클릭
    */
   const onClickPay = async () => {
-
+    try {
+      const payload = {
+        orderinfopkey: orderInfo.orderinfopkey,
+        paytype: 'CARD',
+        payamount: totalPrice,
+      }
+      const { data } = await payment(payload);
+      const { rescode, message, body } = data;
+      if (rescode === '0000') {
+        // 결제완료
+        router.back();
+      } else if (rescode === '0007') {
+        // 부분결제완료
+      } else {
+        alert(message);
+      }
+    } catch (err) {
+      if (err.response.status === 401) {
+        router.replace("/login");
+      }
+    }
   }
 
   return (
@@ -230,7 +258,7 @@ const Order = () => {
       <div className='border-solid border-2 border-slate-400 h-[calc(100vh-10rem)] flex flex-start m-3 rounded-sm'>
         <div className='border-solid border-2 border-slate-400 flex-[4]'>
           {/* 주문내역 */}
-          <div className='border-solid border-2 border-slate-400 w-full h-3/6 flex flex-col justify-between '>
+          <div className='w-full h-3/6 flex flex-col justify-between '>
             <div className='overflow-y-auto'>
               <table className='table-fixed border-collapse w-full'>
                 <thead className='sticky top-0'>
@@ -272,14 +300,14 @@ const Order = () => {
                     <th className='w-[40%] text-align'>합계</th>
                     <th className='w-[20%]'></th>
                     <th className='w-[20%]'>{totalOrderCount}</th>
-                    <th className='w-[20%]'>{totalPrice.toLocaleString()}원</th>
+                    <th className='w-[20%]'>{totalPrice.toLocaleString()} 원</th>
                   </tr>
                 </thead>
               </table>
             </div>
           </div>
           {/* 결제정보 */}
-          <div className='border-solid border-2 border-slate-400 w-full h-3/6'>
+          <div className='border-solid border-t-2 border-slate-400 w-full h-3/6'>
             <div className='w-full h-1/6 flex gap-2'>
               {/*<button className='w-[25%] m-1 rounded-md border-solid border-2 border-slate-400'>전체취소</button>*/}
               {/*<button className='w-[25%] m-1 rounded-md border-solid border-2 border-slate-400'>선택취소</button>*/}
@@ -287,13 +315,13 @@ const Order = () => {
               <button className='w-[25%] m-1 rounded-md border-solid border-2 border-slate-400' onClick={lowerOrderCount}>-</button>
             </div>
             <div className='flex flex-center w-full  h-5/6'>
-              <div className='border-solid border-2 border-slate-400 flex-[1] p-5'>
+              <div className='border-solid border-t-2 border-r-2 border-slate-400 flex-[1] p-5'>
                 <div className='flex items-center justify-between h-1/6'>
                   <p className='flex-[3]'>결제정보</p>
                 </div>
                 <div className='flex items-center justify-between h-1/6'>
                   <p className='flex-[3]'>합계 금액</p>
-                  <p className='flex-[7] text-right'>0</p>
+                  <p className='flex-[7] text-right'>{totalPrice.toLocaleString()} 원</p>
                 </div>
                 <div className='flex items-center justify-between h-1/6'>
                   <p className='flex-[3]'>할인 금액</p>
@@ -308,28 +336,28 @@ const Order = () => {
                   <p className='flex-[7] text-right'>0</p>
                 </div>
               </div>
-              <div className='border-solid border-2 border-slate-400 flex-[1]'></div>
+              <div className='border-solid border-t-2 border-slate-400 flex-[1]'></div>
             </div>
           </div>
         </div>
         <div className='border-solid border-2 border-slate-400 flex-[6] flex flex-wrap'>
-          <div className='border-solid border-2 border-slate-400 w-full h-1/6 flex items-center justify-start py-2'>
+          <div className='w-full h-1/6 flex items-center justify-start py-2'>
             {foodCategoryList.map((foodCategory, idx) => {
               return (
                 <button
                   key={idx}
-                  className='border-solid border-2 border-slate-400 w-28 h-full ms-2 text-xl font-bold'
+                  className='border-solid border-2 border-slate-400 w-28 h-full ms-2 text-xl font-bold rounded-md'
                   onClick={() => onClickFoodCategory(foodCategory.foodcategorypkey)}
                 >{foodCategory.foodcategoryname}</button>
               )
             })}
           </div>
-          <div className='border-solid border-2 border-slate-400 w-full h-4/6 flex flex-wrap content-start items-start'>
+          <div className='border-solid border-t-2 border-slate-400 w-full h-4/6 flex flex-wrap content-start items-start'>
             {foodList.map((food, idx) => {
               return (
                 <div
                   key={idx}
-                  className='border-solid border-2 border-slate-400 m-2 w-[9.48rem] h-20 flex flex-col justify-between p-1'
+                  className='border-solid border-2 border-slate-400 m-2 w-[9.47rem] h-20 flex flex-col justify-between p-1 rounded-md'
                   onClick={() => onClickFood(food)}
                 >
                 <p className='text-base font-bold ps-2'>{food.foodname}</p>
@@ -338,9 +366,9 @@ const Order = () => {
               )
             })}
           </div>
-          <div className='border-solid border-2 border-slate-400 w-full h-1/6 flex items-center justify-start py-2'>
-            <button className='border-solid border-2 border-slate-400 w-36 h-full ms-2 text-xl font-bold' onClick={() => onClickOrder()}>주문</button>
-            <button className='border-solid border-2 border-slate-400 w-36 h-full ms-2 text-xl font-bold'>결제</button>
+          <div className='border-solid border-t-2 border-slate-400 w-full h-1/6 flex items-center justify-start py-2'>
+            <button className='border-solid border-2 border-slate-400 w-36 h-full ms-2 text-xl font-bold rounded-md' onClick={() => onClickOrder()}>주문</button>
+            <button className='border-solid border-2 border-slate-400 w-36 h-full ms-2 text-xl font-bold rounded-md' onClick={() => onClickPay()}>결제</button>
           </div>
         </div>
       </div>
