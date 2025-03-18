@@ -31,7 +31,7 @@ const Header = () => {
   return (
     <div className='flex items-center justify-between h-20 mx-auto bg-main'>
       <div className='ms-2 w-1/6 text-center'>
-        <p className='text-white text-4xl' onClick={onClickHome}>POS</p>
+        <button className='text-white text-4xl' onClick={onClickHome}>POS</button>
       </div>
       <div className='me-2 w-5/6'>
         <div className='flex items-center gap-4'>

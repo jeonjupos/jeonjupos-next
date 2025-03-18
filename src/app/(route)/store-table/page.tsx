@@ -18,8 +18,10 @@ const StoreTable = () => {
   const fetchStoreTable = async () => {
     try {
       const { data } = await getStoreTable();
+      console.log(data);
       setStoreTableList(data.body.storetableset);
     } catch (err) {
+      console.log('1111 : ', err.response);
       if (err.response.status === 401) {
         router.replace("/login");
       }
@@ -33,10 +35,10 @@ const StoreTable = () => {
     <div>
       <Header/>
       <Navigation/>
-      <div className='border-solid border-2 border-slate-400 h-[calc(100vh-10rem)] flex flex-wrap content-start flex-start m-3 rounded-sm overflow-y-auto'>
+      <div className='border-solid border-2 border-slate-400 h-[calc(100vh-10rem)] flex flex-wrap content-start flex-start m-3 rounded-sm overflow-y-auto p-2'>
         {storeTableList.map((storeTable, idx) => {
           return (
-            <div key={idx} className='m-2 w-60 h-48 flex flex-col rounded-sm border-solid border-2 border-slate-400' onClick={() => onClickStoreTable(storeTable)}>
+            <div key={idx} className='m-2 flex flex-col w-[15rem] h-48 rounded-sm border-solid border-2 border-slate-400' onClick={() => onClickStoreTable(storeTable)}>
               {storeTable.diningyn === 'N' && (
                 <div className='h-full'>
                   <div className='h-2/6 flex justify-between items-center rounded-sm'>

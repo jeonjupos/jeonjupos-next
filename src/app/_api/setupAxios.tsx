@@ -23,6 +23,7 @@ authInstance.interceptors.request.use(
       ...config.headers,
       Authorization: !accessToken ? `Bearer ` : `Bearer ${accessToken}`,
     };
+    console.log('config : ', config);
     return config;
   },
   error => {

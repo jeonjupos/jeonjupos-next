@@ -17,14 +17,26 @@ const Order = () => {
   const [orderInfo, setOrderInfo] = useState(null);
   const [orderFoodList, setOrderFoodList] = useState([]);
   const [newOrderFoodList, setNewOrderFoodList] = useState([]);
-  const [totalOrderCount, setTotalOrderCount] = useState(0);
-  const [totalPrice, setTotalPrice] = useState(0);
-  const [onClickFoodPkey, setOnClickFoodPkey] = useState<{ foodpkey: number, flag: 'ord' | 'new'}>({ foodpkey: 0, flag: 'ord' });
+  const [totalOrderCount, setTotalOrderCount] = useState<number>(0);
+  const [totalPrice, setTotalPrice] = useState<number>(0);
+  const [onClickFoodPkey, setOnClickFoodPkey] = useState<{ idx: number }>({ idx: 0 });
+  const [onClickFoodCategoryPkey, setOnClickFoodCategoryPkey] = useState<number>(0);
 
   useEffect(() => {
     fetchFoodCategoryList();
     fetchOrderInfo();
   }, [])
+
+  useEffect(() => {
+    let totalprice: number = 0;
+    let ordercount: number = 0;
+    for (const orderFood of orderFoodList) {
+      ordercount += orderFood.ordercount;
+      totalprice += orderFood.totalprice;
+    }
+    setTotalPrice(totalprice);
+    setTotalOrderCount(ordercount);
+  }, [orderFoodList])
   /**
    * 메뉴 카테고리 조회
    */
@@ -32,6 +44,10 @@ const Order = () => {
     try {
       const { data } = await getFoodCategoryList();
       setFoodCategoryList(data.body.foodcategorylist);
+      if (data.body.foodcategorylist.length > 0) {
+        setOnClickFoodCategoryPkey(data.body.foodcategorylist[0].foodcategorypkey);
+        onClickFoodCategory(data.body.foodcategorylist[0].foodcategorypkey);
+      }
     } catch (err) {
       if (err.response.status === 401) {
         router.replace("/login");
@@ -79,6 +95,7 @@ const Order = () => {
     try {
       const { data } = await getFoodList(foodcategorypkey);
       setFoodList(data.body.foodlist);
+      setOnClickFoodCategoryPkey(foodcategorypkey);
     } catch (err) {
       if (err.response.status === 401) {
         router.replace("/login");
@@ -91,13 +108,15 @@ const Order = () => {
    * @param food
    */
   const onClickFood = async (food: any) => {
-    const findOrderFood = newOrderFoodList.find((orderFood) => orderFood.foodpkey === food.foodpkey)
+    const findOrderFood = orderFoodList.find((orderFood) => orderFood.foodpkey === food.foodpkey)
     if (findOrderFood !== undefined) {
+      console.log('2');
       findOrderFood.ordercount = findOrderFood.ordercount + 1;
       findOrderFood.totalprice = findOrderFood.saleprice * findOrderFood.ordercount;
-      setNewOrderFoodList([...newOrderFoodList]);
+      setOrderFoodList([...orderFoodList]);
     } else {
-      setNewOrderFoodList([...newOrderFoodList, {orderfoodpkey: 0, foodpkey: food.foodpkey, foodname: `new${food.foodname}`, saleprice: food.saleprice, ordercount: 1, totalprice: food.saleprice}]);
+      console.log('1');
+      setOrderFoodList([...orderFoodList, {orderfoodpkey: 0, foodpkey: food.foodpkey, foodname: `new${food.foodname}`, saleprice: food.saleprice, ordercount: 1, totalprice: food.saleprice}]);
     }
   }
 
@@ -171,56 +190,28 @@ const Order = () => {
   }
   /**
    * 기존 메뉴 클릭
-   * @param foodpkey
+   * @param idx
    */
-  const onClickOrderFood = (foodpkey: number) => {
-    setOnClickFoodPkey({ foodpkey: foodpkey, flag: 'ord' });
-  }
-  /**
-   * 추가 메뉴 클릭
-   * @param foodpkey
-   */
-  const onClickNewOrderFood = (foodpkey: number) => {
-    setOnClickFoodPkey({ foodpkey: foodpkey, flag: 'new' });
+  const onClickOrderFood = (idx: number) => {
+    setOnClickFoodPkey({ idx: idx });
   }
   /**
    * 수량 증가
    */
-  const raiseOrderCount = () => {
-    if (onClickFoodPkey.flag === 'ord') {
-      const findOrderFood = orderFoodList.find((orderFood) => orderFood.foodpkey === onClickFoodPkey.foodpkey);
-      if (findOrderFood !== undefined) {
-        findOrderFood.ordercount = findOrderFood.ordercount + 1;
-        setOrderFoodList([...orderFoodList]);
-      }
-    } else {
-      const findOrderFood = newOrderFoodList.find((orderFood) => orderFood.foodpkey === onClickFoodPkey.foodpkey);
-      if (findOrderFood !== undefined) {
-        findOrderFood.ordercount = findOrderFood.ordercount + 1;
-        setNewOrderFoodList([...newOrderFoodList]);
-      }
-    }
+  const raiseOrderCount = () => {const orderFood = orderFoodList[onClickFoodPkey.idx-1];
+    orderFood.ordercount = orderFood.ordercount + 1;
+    orderFood.totalprice = orderFood.saleprice * orderFood.ordercount;
+    setOrderFoodList([...orderFoodList]);
   }
   /**
    * 수량 감소
    */
   const lowerOrderCount = () => {
-    if (onClickFoodPkey.flag === 'ord') {
-      const findOrderFood = orderFoodList.find((orderFood) => orderFood.foodpkey === onClickFoodPkey.foodpkey);
-      if (findOrderFood !== undefined) {
-        if (findOrderFood.ordercount > 0) {
-          findOrderFood.ordercount = findOrderFood.ordercount - 1;
-          setOrderFoodList([...orderFoodList]);
-        }
-      }
-    } else {
-      const findOrderFood = newOrderFoodList.find((orderFood) => orderFood.foodpkey === onClickFoodPkey.foodpkey);
-      if (findOrderFood !== undefined) {
-        if (findOrderFood.ordercount > 0) {
-          findOrderFood.ordercount = findOrderFood.ordercount - 1;
-          setNewOrderFoodList([...newOrderFoodList]);
-        }
-      }
+    const orderFood = orderFoodList[onClickFoodPkey.idx-1];
+    if (orderFood.ordercount > 0) {
+      orderFood.ordercount = orderFood.ordercount - 1;
+      orderFood.totalprice = orderFood.saleprice * orderFood.ordercount;
+      setOrderFoodList([...orderFoodList]);
     }
   }
 
@@ -272,7 +263,11 @@ const Order = () => {
                 <tbody className='divide-y divide-gray-300'>
                 {orderFoodList.map((order, idx) => {
                   return (
-                    <tr key={idx} onClick={() => {onClickOrderFood(order.foodpkey)}}>
+                    <tr
+                      key={idx}
+                      onClick={() => {onClickOrderFood(idx+1)}}
+                      className={`${idx % 2 === 0 ? 'bg-gray-300' : ''} ${idx+1 === onClickFoodPkey.idx ? 'bg-gray-500 text-white' : ''}`}
+                    >
                       <td className='text-center'>{order.foodname}</td>
                       <td className='text-center'>{order.saleprice.toLocaleString()}</td>
                       <td className='text-center'>{order.ordercount}</td>
@@ -280,16 +275,16 @@ const Order = () => {
                     </tr>
                   )
                 })}
-                {newOrderFoodList.map((order, idx) => {
-                  return (
-                    <tr key={idx} className='bg-gray-300' onClick={() => {onClickNewOrderFood(order.foodpkey)}}>
-                      <td className='text-center'>{order.foodname}</td>
-                      <td className='text-center'>{order.saleprice.toLocaleString()}</td>
-                      <td className='text-center'>{order.ordercount}</td>
-                      <td className='text-center'>{order.totalprice.toLocaleString()}</td>
-                    </tr>
-                  )
-                })}
+                {/*{newOrderFoodList.map((order, idx) => {*/}
+                {/*  return (*/}
+                {/*    <tr key={idx} className='bg-gray-300' onClick={() => {onClickNewOrderFood(order.foodpkey)}}>*/}
+                {/*      <td className='text-center'>{order.foodname}</td>*/}
+                {/*      <td className='text-center'>{order.saleprice.toLocaleString()}</td>*/}
+                {/*      <td className='text-center'>{order.ordercount}</td>*/}
+                {/*      <td className='text-center'>{order.totalprice.toLocaleString()}</td>*/}
+                {/*    </tr>*/}
+                {/*  )*/}
+                {/*})}*/}
                 </tbody>
               </table>
             </div>
@@ -298,7 +293,6 @@ const Order = () => {
                 <thead>
                   <tr  className='bg-gray-400'>
                     <th className='w-[40%] text-align'>합계</th>
-                    <th className='w-[20%]'></th>
                     <th className='w-[20%]'>{totalOrderCount}</th>
                     <th className='w-[20%]'>{totalPrice.toLocaleString()} 원</th>
                   </tr>
@@ -320,20 +314,20 @@ const Order = () => {
                   <p className='flex-[3]'>결제정보</p>
                 </div>
                 <div className='flex items-center justify-between h-1/6'>
-                  <p className='flex-[3]'>합계 금액</p>
-                  <p className='flex-[7] text-right'>{totalPrice.toLocaleString()} 원</p>
+                  <p className='w-[4rem]'>합계 금액</p>
+                  <p className='text-right'>{totalPrice.toLocaleString()} 원</p>
                 </div>
                 <div className='flex items-center justify-between h-1/6'>
-                  <p className='flex-[3]'>할인 금액</p>
-                  <p className='flex-[7] text-right'>0</p>
+                  <p className='w-[4rem]'>할인 금액</p>
+                  <p className='text-right'>0</p>
                 </div>
                 <div className='flex items-center justify-between h-1/6'>
-                  <p className='flex-[3]'>받을 금액</p>
-                  <p className='flex-[7] text-right'>0</p>
+                  <p className='w-[4rem]'>받을 금액</p>
+                  <p className='text-right'>0</p>
                 </div>
                 <div className='flex items-center justify-between h-1/6'>
-                  <p className='flex-[3]'>받은 금액</p>
-                  <p className='flex-[7] text-right'>0</p>
+                  <p className='w-[4rem]'>받은 금액</p>
+                  <p className='text-right'>0</p>
                 </div>
               </div>
               <div className='border-solid border-t-2 border-slate-400 flex-[1]'></div>
@@ -341,26 +335,26 @@ const Order = () => {
           </div>
         </div>
         <div className='border-solid border-2 border-slate-400 flex-[6] flex flex-wrap'>
-          <div className='w-full h-1/6 flex items-center justify-start py-2'>
+          <div className='w-full h-1/6 flex gap-2 items-center justify-start p-2'>
             {foodCategoryList.map((foodCategory, idx) => {
               return (
                 <button
                   key={idx}
-                  className='border-solid border-2 border-slate-400 w-28 h-full ms-2 text-xl font-bold rounded-md'
+                  className={`border-solid border-2 border-slate-400 w-28 h-full text-xl font-bold rounded-md ${foodCategory.foodcategorypkey === onClickFoodCategoryPkey ? 'bg-gray-400' : ''}`}
                   onClick={() => onClickFoodCategory(foodCategory.foodcategorypkey)}
                 >{foodCategory.foodcategoryname}</button>
               )
             })}
           </div>
-          <div className='border-solid border-t-2 border-slate-400 w-full h-4/6 flex flex-wrap content-start items-start'>
+          <div className='border-solid border-t-2 border-slate-400 w-full h-4/6 p-2 flex flex-wrap gap-2 content-start items-start'>
             {foodList.map((food, idx) => {
               return (
                 <div
                   key={idx}
-                  className='border-solid border-2 border-slate-400 m-2 w-[9.47rem] h-20 flex flex-col justify-between p-1 rounded-md'
+                  className='border-solid border-2 border-slate-400 w-[calc(25%-6px)] h-20 flex flex-col justify-between p-1 rounded-md active:bg-gray-400'
                   onClick={() => onClickFood(food)}
                 >
-                <p className='text-base font-bold ps-2'>{food.foodname}</p>
+                  <p className='text-base font-bold ps-2'>{food.foodname}</p>
                   <p className='ps-2'>{food.saleprice.toLocaleString()}원</p>
                 </div>
               )
