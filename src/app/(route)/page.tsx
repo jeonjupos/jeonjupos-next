@@ -19,7 +19,6 @@ const Home = () => {
   const tokenLogin = async () => {
     try {
       const { data } = await postTokenLogin();
-      console.log('1111 : ', data);
       const { rescode, message, body } = data;
       if (rescode === '0000') {
         // 검증 성공 시 매장 테이블 페이지로 이동

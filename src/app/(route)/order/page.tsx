@@ -7,6 +7,8 @@ import {useEffect, useState} from "react";
 import {getFoodCategoryList, getFoodList} from "@/app/_api/food";
 import {firstOrder, getOrderFoodList, getOrderInfo, payment, reOrder} from "@/app/_api/order";
 
+const keypadlist = ['7', '8', '9', '4', '5', '6', '1', '2', '3', '0', '00', 'C']
+
 const Order = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -15,12 +17,14 @@ const Order = () => {
   const [foodCategoryList, setFoodCategoryList] = useState([]);
   const [foodList, setFoodList] = useState([]);
   const [orderInfo, setOrderInfo] = useState(null);
-  const [orderFoodList, setOrderFoodList] = useState([]);
+  const [orderFoodList, setOrderFoodList] = useState<{orderfoodpkey: number; foodpkey: number; foodname: string; saleprice: number; ordercount: number; totalprice: number}[]>([]);
   const [newOrderFoodList, setNewOrderFoodList] = useState([]);
   const [totalOrderCount, setTotalOrderCount] = useState<number>(0);
   const [totalPrice, setTotalPrice] = useState<number>(0);
   const [onClickFoodPkey, setOnClickFoodPkey] = useState<{ idx: number }>({ idx: 0 });
   const [onClickFoodCategoryPkey, setOnClickFoodCategoryPkey] = useState<number>(0);
+  const [inputAmount, setInputAmount] = useState<string>('0');
+  const [receivedAmount, setReceivedAmount] = useState<number>(0);
 
   useEffect(() => {
     fetchFoodCategoryList();
@@ -110,12 +114,10 @@ const Order = () => {
   const onClickFood = async (food: any) => {
     const findOrderFood = orderFoodList.find((orderFood) => orderFood.foodpkey === food.foodpkey)
     if (findOrderFood !== undefined) {
-      console.log('2');
       findOrderFood.ordercount = findOrderFood.ordercount + 1;
       findOrderFood.totalprice = findOrderFood.saleprice * findOrderFood.ordercount;
       setOrderFoodList([...orderFoodList]);
     } else {
-      console.log('1');
       setOrderFoodList([...orderFoodList, {orderfoodpkey: 0, foodpkey: food.foodpkey, foodname: `new${food.foodname}`, saleprice: food.saleprice, ordercount: 1, totalprice: food.saleprice}]);
     }
   }
@@ -147,32 +149,32 @@ const Order = () => {
         const orderfoodlist = orderFoodList.map((orderfood) => {
           return {orderfoodpkey: orderfood.orderfoodpkey, foodpkey: orderfood.foodpkey, ordercount: orderfood.ordercount};
         })
-        const neworderfoodlist = newOrderFoodList.map((orderfood) => {
-          return {orderfoodpkey: orderfood.orderfoodpkey, foodpkey: orderfood.foodpkey, ordercount: orderfood.ordercount};
-        })
-
-        const BMap = neworderfoodlist.reduce((acc, item) => {
-          acc[item.foodpkey] = item.ordercount;
-          return acc;
-        }, {});
-
-        // 1. A 배열을 업데이트 (매칭되는 경우 ordercount 합산)
-        const updatedA = orderfoodlist.map(item => ({
-          ...item,
-          ordercount: item.ordercount + (BMap[item.foodpkey] || 0)
-        }));
-
-        // 2. A에 없는 B의 항목을 추가
-        const BOnlyItems = neworderfoodlist.filter(item => !orderfoodlist.some(a => a.foodpkey === item.foodpkey))
-          .map(item => ({ orderfoodpkey: item.orderfoodpkey, foodpkey: item.foodpkey, ordercount: item.ordercount }));
-
-        // 3. 두 배열을 합치기
-        const result = [...updatedA, ...BOnlyItems];
+        // const neworderfoodlist = newOrderFoodList.map((orderfood) => {
+        //   return {orderfoodpkey: orderfood.orderfoodpkey, foodpkey: orderfood.foodpkey, ordercount: orderfood.ordercount};
+        // })
+        //
+        // const BMap = neworderfoodlist.reduce((acc, item) => {
+        //   acc[item.foodpkey] = item.ordercount;
+        //   return acc;
+        // }, {});
+        //
+        // // 1. A 배열을 업데이트 (매칭되는 경우 ordercount 합산)
+        // const updatedA = orderfoodlist.map(item => ({
+        //   ...item,
+        //   ordercount: item.ordercount + (BMap[item.foodpkey] || 0)
+        // }));
+        //
+        // // 2. A에 없는 B의 항목을 추가
+        // const BOnlyItems = neworderfoodlist.filter(item => !orderfoodlist.some(a => a.foodpkey === item.foodpkey))
+        //   .map(item => ({ orderfoodpkey: item.orderfoodpkey, foodpkey: item.foodpkey, ordercount: item.ordercount }));
+        //
+        // // 3. 두 배열을 합치기
+        // const result = [...updatedA, ...BOnlyItems];
 
 
         const payload = {
           orderinfopkey: orderInfo.orderinfopkey,
-          orderfoodlist: result,
+          orderfoodlist: orderfoodlist,
         }
         const { data } = await reOrder(payload);
         const { rescode, message, body } = data;
@@ -242,14 +244,32 @@ const Order = () => {
     }
   }
 
+  const onClickKeyPad = (key: string) => {
+    if (key === 'C') {
+      setInputAmount('0');
+      setReceivedAmount(0);
+    } else {
+      setInputAmount(inputAmount + key);
+    }
+  }
+
+  const onClickKeyEnter = () => {
+    setReceivedAmount(parseInt(inputAmount));
+    setInputAmount('0');
+  }
+
+  const onClickKeyAll = () => {
+    setReceivedAmount(totalPrice);
+    setInputAmount(totalPrice.toString());
+  }
   return (
     <div>
       <Header/>
       <Navigation/>
-      <div className='border-solid border-2 border-slate-400 h-[calc(100vh-10rem)] flex flex-start m-3 rounded-sm'>
+      <div className='border-solid border-2 border-slate-400 h-[calc(100vh-10rem)] flex flex-start m-3 rounded-sm bg-[#F0F0F0]'>
         <div className='border-solid border-2 border-slate-400 flex-[4]'>
           {/* 주문내역 */}
-          <div className='w-full h-3/6 flex flex-col justify-between '>
+          <div className='w-full h-[45%] flex flex-col justify-between '>
             <div className='overflow-y-auto'>
               <table className='table-fixed border-collapse w-full'>
                 <thead className='sticky top-0'>
@@ -266,7 +286,7 @@ const Order = () => {
                     <tr
                       key={idx}
                       onClick={() => {onClickOrderFood(idx+1)}}
-                      className={`${idx % 2 === 0 ? 'bg-gray-300' : ''} ${idx+1 === onClickFoodPkey.idx ? 'bg-gray-500 text-white' : ''}`}
+                      className={`${idx % 2 === 0 ? 'bg-gray-300' : ''} ${idx+1 === onClickFoodPkey.idx ? 'bg-blue-500 text-white' : ''}`}
                     >
                       <td className='text-center'>{order.foodname}</td>
                       <td className='text-center'>{order.saleprice.toLocaleString()}</td>
@@ -275,16 +295,6 @@ const Order = () => {
                     </tr>
                   )
                 })}
-                {/*{newOrderFoodList.map((order, idx) => {*/}
-                {/*  return (*/}
-                {/*    <tr key={idx} className='bg-gray-300' onClick={() => {onClickNewOrderFood(order.foodpkey)}}>*/}
-                {/*      <td className='text-center'>{order.foodname}</td>*/}
-                {/*      <td className='text-center'>{order.saleprice.toLocaleString()}</td>*/}
-                {/*      <td className='text-center'>{order.ordercount}</td>*/}
-                {/*      <td className='text-center'>{order.totalprice.toLocaleString()}</td>*/}
-                {/*    </tr>*/}
-                {/*  )*/}
-                {/*})}*/}
                 </tbody>
               </table>
             </div>
@@ -301,10 +311,10 @@ const Order = () => {
             </div>
           </div>
           {/* 결제정보 */}
-          <div className='border-solid border-t-2 border-slate-400 w-full h-3/6'>
+          <div className='w-full h-[55%] border-solid border-t-2 border-slate-400'>
             <div className='w-full h-1/6 flex gap-2'>
-              {/*<button className='w-[25%] m-1 rounded-md border-solid border-2 border-slate-400'>전체취소</button>*/}
-              {/*<button className='w-[25%] m-1 rounded-md border-solid border-2 border-slate-400'>선택취소</button>*/}
+              <button className='w-[25%] m-1 rounded-md border-solid border-2 border-slate-400'>전체취소</button>
+              <button className='w-[25%] m-1 rounded-md border-solid border-2 border-slate-400'>선택취소</button>
               <button className='w-[25%] m-1 rounded-md border-solid border-2 border-slate-400' onClick={raiseOrderCount}>+</button>
               <button className='w-[25%] m-1 rounded-md border-solid border-2 border-slate-400' onClick={lowerOrderCount}>-</button>
             </div>
@@ -315,7 +325,7 @@ const Order = () => {
                 </div>
                 <div className='flex items-center justify-between h-1/6'>
                   <p className='w-[4rem]'>합계 금액</p>
-                  <p className='text-right'>{totalPrice.toLocaleString()} 원</p>
+                  <p className='text-right'>{totalPrice.toLocaleString()}</p>
                 </div>
                 <div className='flex items-center justify-between h-1/6'>
                   <p className='w-[4rem]'>할인 금액</p>
@@ -323,14 +333,37 @@ const Order = () => {
                 </div>
                 <div className='flex items-center justify-between h-1/6'>
                   <p className='w-[4rem]'>받을 금액</p>
-                  <p className='text-right'>0</p>
+                  <p className='text-right'>{totalPrice.toLocaleString()}</p>
                 </div>
                 <div className='flex items-center justify-between h-1/6'>
                   <p className='w-[4rem]'>받은 금액</p>
-                  <p className='text-right'>0</p>
+                  <p className='text-right'>{receivedAmount.toLocaleString()}</p>
                 </div>
               </div>
-              <div className='border-solid border-t-2 border-slate-400 flex-[1]'></div>
+              <div className='border-solid border-t-2 border-slate-400 flex-[1] flex flex-col p-2'>
+                <div className='w-full h-1/6 p-1'>
+                  <p className='flex items-center justify-end w-full h-[2rem] border border-black rounded px-1'>{parseInt(inputAmount).toLocaleString()}</p>
+                </div>
+                <div className='w-full h-4/6 flex flex-wrap content-start items-start'>
+                  {keypadlist.map((key: string, idx) => {
+                    return (
+                      <div key={idx} className={'w-[33.3%] h-[25%] flex items-center justify-center p-1'}>
+                        <button className='w-full h-full border border-black rounded' onClick={() => onClickKeyPad(key)}>
+                          {key}
+                        </button>
+                      </div>
+                    )
+                  })}
+                </div>
+                <div className='w-full h-1/6 flex gap-2 p-1'>
+                  <button className='w-[33.3%] h-[2rem] border border-black rounded p-1' onClick={onClickKeyAll}>
+                    ALL
+                  </button>
+                  <button className='w-[63.3%] h-[2rem] border border-black rounded' onClick={onClickKeyEnter}>
+                    Enter
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -340,7 +373,7 @@ const Order = () => {
               return (
                 <button
                   key={idx}
-                  className={`border-solid border-2 border-slate-400 w-28 h-full text-xl font-bold rounded-md ${foodCategory.foodcategorypkey === onClickFoodCategoryPkey ? 'bg-gray-400' : ''}`}
+                  className={`border-solid border-2 border-slate-400 w-28 h-full text-xl font-bold rounded-md ${foodCategory.foodcategorypkey === onClickFoodCategoryPkey ? 'bg-[#FFA500]' : ''}`}
                   onClick={() => onClickFoodCategory(foodCategory.foodcategorypkey)}
                 >{foodCategory.foodcategoryname}</button>
               )
@@ -351,7 +384,7 @@ const Order = () => {
               return (
                 <div
                   key={idx}
-                  className='border-solid border-2 border-slate-400 w-[calc(25%-6px)] h-20 flex flex-col justify-between p-1 rounded-md active:bg-gray-400'
+                  className='border-solid border-2 border-slate-400 w-[calc(25%-6px)] h-20 flex flex-col justify-between p-1 bg-[#D3D3D3] rounded-md active:bg-gray-400'
                   onClick={() => onClickFood(food)}
                 >
                   <p className='text-base font-bold ps-2'>{food.foodname}</p>
