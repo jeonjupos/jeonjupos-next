@@ -7,7 +7,7 @@ import {useEffect, useState} from "react";
 import {getFoodCategoryList, getFoodList} from "@/app/_api/food";
 import {firstOrder, getOrderFoodList, getOrderInfo, payment, reOrder} from "@/app/_api/order";
 
-const keypadlist = ['7', '8', '9', '4', '5', '6', '1', '2', '3', '0', '00', 'C']
+const keypadlist: string[] = ['7', '8', '9', '4', '5', '6', '1', '2', '3', '0', '00', 'C']
 
 const Order = () => {
   const router = useRouter();
@@ -18,7 +18,6 @@ const Order = () => {
   const [foodList, setFoodList] = useState([]);
   const [orderInfo, setOrderInfo] = useState(null);
   const [orderFoodList, setOrderFoodList] = useState<{orderfoodpkey: number; foodpkey: number; foodname: string; saleprice: number; ordercount: number; totalprice: number}[]>([]);
-  const [newOrderFoodList, setNewOrderFoodList] = useState([]);
   const [totalOrderCount, setTotalOrderCount] = useState<number>(0);
   const [totalPrice, setTotalPrice] = useState<number>(0);
   const [onClickFoodPkey, setOnClickFoodPkey] = useState<{ idx: number }>({ idx: 0 });
@@ -129,7 +128,7 @@ const Order = () => {
     try {
       if (orderInfo === null) {
         // 첫 주문
-        const orderfoodlist = newOrderFoodList.map((orderfood) => {
+        const orderfoodlist = orderFoodList.map((orderfood) => {
           return {foodpkey: orderfood.foodpkey, ordercount: orderfood.ordercount};
         })
         const payload = {
